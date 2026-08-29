@@ -353,8 +353,10 @@ function TrajectoryViz() {
     const points = [];
     let x = 0.2, y = 0.5;
     for (let i = 0; i < 40; i++) {
-      x = Math.max(0.05, Math.min(0.95, x + (Math.random() - 0.45) * 0.12));
-      y = Math.max(0.05, Math.min(0.95, y + (Math.random() - 0.5) * 0.14));
+      const driftX = Math.sin((i + 1) * 0.9) * 0.08 + ((i % 4) - 1.5) * 0.015;
+      const driftY = Math.cos((i + 1) * 1.1) * 0.09 + ((i % 5) - 2) * 0.012;
+      x = Math.max(0.05, Math.min(0.95, x + driftX));
+      y = Math.max(0.05, Math.min(0.95, y + driftY));
       points.push({ x, y });
     }
     return points;
