@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, Tooltip,
@@ -30,7 +30,6 @@ function getGrade(score) {
 
 const GRADE = getGrade(OVERALL_SCORE);
 
-/* Sparkline data per metric */
 function genSparkline(base) {
   return Array.from({ length: 12 }, (_, i) => ({
     t: i,
@@ -38,29 +37,25 @@ function genSparkline(base) {
   }));
 }
 
-/* Metric icon color styles */
 const iconStyle = (color) => ({
   background: `${color}18`,
   color,
   border: `1px solid ${color}30`,
 });
 
-/* Stat bar gradient */
 const barStyle = (color, score) => ({
   width: `${score}%`,
   background: `linear-gradient(90deg, ${color}99, ${color})`,
   boxShadow: `0 0 6px ${color}55`,
 });
 
-/* Heatmap cells */
 const HEATMAP = Array.from({ length: 60 }, () => Math.random());
 
-/* ─── Sub-Components ────────────────────────────────────────── */
+const CATEGORY_PREVIEW = ['Movement', 'Positioning', 'Rotation', 'Farming', 'Teamfight', 'Objective'];
 
 function TopNav() {
   return (
     <nav className="top-nav">
-      {/* Logo */}
       <div className="nav-logo">
         <div className="nav-logo-icon">
           <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -77,7 +72,6 @@ function TopNav() {
 
       <div className="nav-divider" />
 
-      {/* Player */}
       <div className="nav-player">
         <div className="nav-avatar">ZX</div>
         <div className="nav-player-info">
@@ -88,7 +82,6 @@ function TopNav() {
 
       <div className="nav-divider" />
 
-      {/* Tags */}
       <div className="nav-tags">
         <div className="nav-tag active">
           <div className="nav-tag-dot" />
@@ -99,7 +92,6 @@ function TopNav() {
         <div className="nav-tag">SESSION #04</div>
       </div>
 
-      {/* Right */}
       <div className="nav-right">
         <div className="nav-session">
           ANALYSIS ACTIVE &nbsp;·&nbsp;
@@ -116,7 +108,6 @@ function LeftPanel() {
   const grade = GRADE;
   return (
     <div className="left-panel">
-      {/* Grade widget */}
       <div className="glass glass-glow grade-widget" style={{ borderRadius: '10px' }}>
         <div className="grade-score-block">
           <div className="grade-label">OVERALL SCORE</div>
@@ -133,7 +124,6 @@ function LeftPanel() {
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="glass glass-glow" style={{ borderRadius: '10px', padding: '12px 10px', flex: 1 }}>
         <div className="panel-header">
           <div className="panel-title">PERFORMANCE <span className="panel-title-accent">OVERVIEW</span></div>
@@ -155,7 +145,6 @@ function LeftPanel() {
         </div>
       </div>
 
-      {/* Mini Heatmap */}
       <div className="glass glass-glow mini-heatmap" style={{ borderRadius: '10px' }}>
         <div style={{ position: 'absolute', top: '6px', left: '10px', fontFamily: 'var(--font-hud)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
           Positioning Map
@@ -176,7 +165,6 @@ function LeftPanel() {
   );
 }
 
-/* Custom Radar dot */
 function RadarDot({ cx, cy, color }) {
   return <circle cx={cx} cy={cy} r={4} fill={color} stroke="rgba(0,229,255,0.4)" strokeWidth={1.5} />;
 }
@@ -211,7 +199,6 @@ function CenterPanel() {
                 axisLine={false}
                 tickCount={5}
               />
-              {/* Background fill layer */}
               <Radar
                 name="baseline"
                 dataKey={() => 100}
@@ -221,7 +208,6 @@ function CenterPanel() {
                 dot={false}
                 isAnimationActive={false}
               />
-              {/* Actual score */}
               <Radar
                 name="score"
                 dataKey="value"
@@ -250,7 +236,6 @@ function CenterPanel() {
           </ResponsiveContainer>
         </div>
 
-        {/* Legend row */}
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '4px' }}>
           {METRICS.map(m => (
             <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -275,7 +260,6 @@ function RightPanel() {
           <div className="panel-badge">AI</div>
         </div>
 
-        {/* Strengths */}
         <div className="insight-section" style={{ marginBottom: '10px' }}>
           <div className="insight-section-title" style={{ color: '#22d3ee' }}>
             <div className="insight-dot" style={{ background: '#22d3ee' }} />
@@ -289,7 +273,6 @@ function RightPanel() {
           ))}
         </div>
 
-        {/* Weaknesses */}
         <div className="insight-section" style={{ marginBottom: '10px' }}>
           <div className="insight-section-title" style={{ color: '#f87171' }}>
             <div className="insight-dot" style={{ background: '#f87171' }} />
@@ -303,7 +286,6 @@ function RightPanel() {
           ))}
         </div>
 
-        {/* Improve */}
         <div className="insight-section" style={{ marginBottom: '10px' }}>
           <div className="insight-section-title" style={{ color: 'var(--gold)' }}>
             <div className="insight-dot" style={{ background: 'var(--gold)' }} />
@@ -318,7 +300,6 @@ function RightPanel() {
         </div>
       </div>
 
-      {/* AI Recommendation */}
       <div className="glass glass-glow ai-rec-card">
         <div className="ai-rec-header">
           <svg viewBox="0 0 12 12" fill="none">
@@ -337,7 +318,6 @@ function RightPanel() {
         </div>
       </div>
 
-      {/* Movement trajectory mini viz */}
       <div className="glass glass-glow" style={{ borderRadius: '10px', padding: '10px', flex: '0 0 auto' }}>
         <div className="panel-title" style={{ marginBottom: '8px' }}>
           MOVEMENT <span style={{ color: 'var(--cyan)' }}>TRAJECTORY</span>
@@ -351,14 +331,18 @@ function RightPanel() {
 function TrajectoryViz() {
   const pts = useMemo(() => {
     const points = [];
-    let x = 0.2, y = 0.5;
+    let x = 0.22;
+    let y = 0.52;
+
     for (let i = 0; i < 40; i++) {
       const driftX = Math.sin((i + 1) * 0.9) * 0.08 + ((i % 4) - 1.5) * 0.015;
       const driftY = Math.cos((i + 1) * 1.1) * 0.09 + ((i % 5) - 2) * 0.012;
-      x = Math.max(0.05, Math.min(0.95, x + driftX));
-      y = Math.max(0.05, Math.min(0.95, y + driftY));
+
+      x = Math.max(0.05, Math.min(0.95, x + driftX * 0.45));
+      y = Math.max(0.05, Math.min(0.95, y + driftY * 0.45));
       points.push({ x, y });
     }
+
     return points;
   }, []);
 
@@ -366,14 +350,12 @@ function TrajectoryViz() {
 
   return (
     <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ borderRadius: '6px', background: 'rgba(0,0,0,0.2)' }}>
-      {/* Grid lines */}
       {[0.25, 0.5, 0.75].map(t => (
         <g key={t}>
           <line x1={t * w} y1={0} x2={t * w} y2={h} stroke="rgba(100,100,200,0.1)" strokeWidth="0.5" />
           <line x1={0} y1={t * h} x2={w} y2={t * h} stroke="rgba(100,100,200,0.1)" strokeWidth="0.5" />
         </g>
       ))}
-      {/* Path */}
       <polyline
         points={pts.map(p => `${p.x * w},${p.y * h}`).join(' ')}
         fill="none"
@@ -382,7 +364,6 @@ function TrajectoryViz() {
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      {/* Glow path */}
       <polyline
         points={pts.map(p => `${p.x * w},${p.y * h}`).join(' ')}
         fill="none"
@@ -391,11 +372,9 @@ function TrajectoryViz() {
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      {/* Dots */}
       {pts.filter((_, i) => i % 8 === 0).map((p, i) => (
         <circle key={i} cx={p.x * w} cy={p.y * h} r="2.5" fill="#00e5ff" opacity="0.8" />
       ))}
-      {/* Start / End */}
       <circle cx={pts[0].x * w} cy={pts[0].y * h} r="3.5" fill="#22d3ee" stroke="white" strokeWidth="1" />
       <circle cx={pts[pts.length-1].x * w} cy={pts[pts.length-1].y * h} r="3.5" fill="var(--gold)" stroke="white" strokeWidth="1" />
     </svg>
@@ -418,7 +397,6 @@ function StatCard({ metric, sparkData }) {
       </div>
       <div className="stat-card-score" style={{ color: metric.color }}>{metric.score}</div>
 
-      {/* Sparkline */}
       <div className="stat-card-chart">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={sparkData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -451,8 +429,7 @@ function BottomTimeline() {
   );
 }
 
-/* ─── App Root ──────────────────────────────────────────────── */
-export default function App() {
+function AnalysisResultPage() {
   return (
     <div className="app-shell">
       <TopNav />
@@ -464,4 +441,106 @@ export default function App() {
       <BottomTimeline />
     </div>
   );
+}
+
+function UploadState({ onChooseVideo }) {
+  const inputRef = useRef(null);
+
+  const openPicker = () => {
+    if (inputRef.current) inputRef.current.click();
+  };
+
+  return (
+    <div className="upload-shell">
+      <div className="upload-shell-glow" />
+      <div className="upload-panel glass glass-glow">
+        <div className="upload-header-row">
+          <div className="upload-badge">HOK ANALYZER</div>
+          <div className="upload-status">READY FOR UPLOAD</div>
+        </div>
+
+        <div className="upload-copy">
+          <h1>Analyze Your Gameplay</h1>
+          <p>Upload your Honor of Kings gameplay recording and get an AI-powered performance analysis.</p>
+        </div>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".mp4,.mov,.avi,video/mp4,video/quicktime,video/x-msvideo"
+          className="upload-input-hidden"
+          onChange={onChooseVideo}
+        />
+
+        <div
+          className="upload-dropzone"
+          role="button"
+          tabIndex={0}
+          onClick={openPicker}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openPicker();
+            }
+          }}
+        >
+          <div className="upload-icon-wrap">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M18 42.5V21.5C18 18.46 20.46 16 23.5 16H40.42L46 21.58V42.5C46 45.54 43.54 48 40.5 48H23.5C20.46 48 18 45.54 18 42.5Z" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
+              <path d="M40 16V22H46" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
+              <path d="M28 29.5L38 34L28 38.5V29.5Z" fill="currentColor" opacity="0.9" />
+            </svg>
+          </div>
+          <div className="upload-text-main">Drop your gameplay video here</div>
+          <div className="upload-text-sub">or click to browse files</div>
+          <div className="upload-format">Supported formats: MP4, MOV, AVI</div>
+          <button
+            type="button"
+            className="upload-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              openPicker();
+            }}
+          >
+            Choose Video
+          </button>
+        </div>
+
+        <div className="category-preview">
+          <div className="category-preview-label">Analysis Categories</div>
+          <div className="category-preview-list">
+            {CATEGORY_PREVIEW.map((item) => (
+              <div key={item} className="category-chip">{item}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProcessingState() {
+  return (
+    <div className="upload-shell">
+      <div className="upload-shell-glow" />
+      <div className="upload-panel glass glass-glow processing-panel">
+        <div className="processing-spinner" aria-label="Analyzing video" />
+        <h2>Analyzing gameplay...</h2>
+        <p>Processing your replay and extracting metrics from the match footage.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [screen, setScreen] = useState('upload');
+
+  const handleVideoSelected = () => {
+    setScreen('analyzing');
+    window.setTimeout(() => setScreen('analysis'), 1200);
+  };
+
+  if (screen === 'upload') return <UploadState onChooseVideo={handleVideoSelected} />;
+  if (screen === 'analyzing') return <ProcessingState />;
+  return <AnalysisResultPage />;
 }
