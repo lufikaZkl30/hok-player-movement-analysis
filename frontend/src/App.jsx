@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, Tooltip,
@@ -328,6 +328,7 @@ function RightPanel() {
   );
 }
 
+// ─── Trajectory Visualization ──────────────────────────────
 function TrajectoryViz() {
   const pts = useMemo(() => {
     const points = [];
@@ -519,28 +520,136 @@ function UploadState({ onChooseVideo }) {
   );
 }
 
-function ProcessingState() {
+// ─── Gameplay Analysis Simulation ──────────────────────────────
+const ANALYSIS_STEPS = [
+  'Analyzing Player Movement...',
+  'Detecting hero position...',
+  'Analyzing positioning...',
+  'Tracking rotation and pathing...',
+  'Reviewing farming efficiency...',
+  'Finalizing match insights...'
+];
+
+function formatTimestamp(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setProgress((previous) => {
+        const next = Math.min(100, previous + 1.25);
+        setCurrentTime((time) => Math.min(42, time + 0.5));
+        return next;
+      });
+    }, 120);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (progress >= 100) {
+      onAnalysisComplete();
+    }
+  }, [progress, onAnalysisComplete]);
+
+  const heroX = 30 + Math.sin(progress / 18) * 22;
+  const heroY = 42 + Math.cos(progress / 16) * 18;
+  const trajectory = Array.from({ length: 18 }, (_, index) => {
+    const x = 18 + (index / 17) * 58 + Math.sin(index * 0.9 + progress / 16) * 6;
+    const y = 52 + Math.cos(index * 1.15 + progress / 18) * 16;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const currentStatus = ANALYSIS_STEPS[Math.min(ANALYSIS_STEPS.length - 1, Math.floor(progress / 20))];
+
   return (
-    <div className="upload-shell">
-      <div className="upload-shell-glow" />
-      <div className="upload-panel glass glass-glow processing-panel">
-        <div className="processing-spinner" aria-label="Analyzing video" />
-        <h2>Analyzing gameplay...</h2>
-        <p>Processing your replay and extracting metrics from the match footage.</p>
+    <div className="analysis-page-shell">
+      <div className="analysis-header-bar">
+        <div className="analysis-header-label">GAMEPLAY ANALYSIS</div>
+        <div className="analysis-header-meta">{formatTimestamp(currentTime)} / 00:42</div>
       </div>
+
+      <div className="analysis-stage">
+        <div className="analysis-video-panel">
+          {videoUrl ? (
+            <video src={videoUrl} autoPlay muted loop className="analysis-video" playsInline />
+          ) : (
+            <div className="analysis-video-placeholder">
+              <div className="analysis-video-placeholder-inner" />
+            </div>
+          )}
+
+          <div className="tracking-overlay" aria-label="AI hero tracking overlay">
+            <div
+              className="tracking-box"
+              style={{ left: `${heroX}%`, top: `${heroY}%` }}
+            >
+              <span className="tracking-pill">PLAYER</span>
+            </div>
+            <div className="tracking-dot" style={{ left: `${heroX + 4}%`, top: `${heroY + 3}%` }} />
+            <svg className="tracking-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <polyline points={trajectory} />
+            </svg>
+          </div>
+
+          <div className="video-hud">
+            <span>LIVE TRACKING</span>
+            <strong>{formatTimestamp(currentTime)}</strong>
+          </div>
+        </div>
+
+        <div className="analysis-sidebar-panel glass glass-glow">
+          <div className="analysis-sidebar-header">
+            <span>ANALYSIS PROGRESS</span>
+            <strong>{Math.round(progress)}%</strong>
+          </div>
+
+          <div className="analysis-progress-bar">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+
+          <div className="analysis-status-box">
+            <div className="analysis-status-label">Current status</div>
+            <div className="analysis-status-text">{currentStatus}</div>
+          </div>
+
+          <div className="analysis-step-list">
+            {ANALYSIS_STEPS.map((step, index) => (
+              <div
+                key={step}
+                className={`analysis-step-item ${index <= Math.floor(progress / 20) ? 'active' : ''}`}
+              >
+                <span className="analysis-step-dot" />
+                {step}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {progress >= 100 && <AnalysisResultPage />}
     </div>
   );
 }
 
 export default function App() {
   const [screen, setScreen] = useState('upload');
+  const [videoUrl, setVideoUrl] = useState('');
 
-  const handleVideoSelected = () => {
-    setScreen('analyzing');
-    window.setTimeout(() => setScreen('analysis'), 1200);
+  const handleVideoSelected = (event) => {
+    const file = event.target.files?.[0];
+    const nextUrl = file ? URL.createObjectURL(file) : '';
+    setVideoUrl(nextUrl);
+    setScreen('analysis');
   };
 
   if (screen === 'upload') return <UploadState onChooseVideo={handleVideoSelected} />;
-  if (screen === 'analyzing') return <ProcessingState />;
-  return <AnalysisResultPage />;
+
+  return <GameplayAnalysisPage videoUrl={videoUrl} onAnalysisComplete={() => {}} />;
 }
