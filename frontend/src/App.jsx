@@ -539,8 +539,12 @@ function formatTimestamp(totalSeconds) {
 function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef(null);
 
   useEffect(() => {
+    if (!isPlaying) return undefined;
+
     const timer = window.setInterval(() => {
       setProgress((previous) => {
         const next = Math.min(100, previous + 1.25);
@@ -550,13 +554,30 @@ function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
     }, 120);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isPlaying]);
 
   useEffect(() => {
     if (progress >= 100) {
+      setIsPlaying(false);
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
       onAnalysisComplete();
     }
   }, [progress, onAnalysisComplete]);
+
+  const handleVideoToggle = () => {
+    if (!videoRef.current) return;
+
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+      return;
+    }
+
+    videoRef.current.pause();
+    setIsPlaying(false);
+  };
 
   const heroX = 30 + Math.sin(progress / 18) * 22;
   const heroY = 42 + Math.cos(progress / 16) * 18;
@@ -578,12 +599,26 @@ function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
       <div className="analysis-stage">
         <div className="analysis-video-panel">
           {videoUrl ? (
-            <video src={videoUrl} autoPlay muted loop className="analysis-video" playsInline />
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              autoPlay
+              muted
+              loop
+              className="analysis-video"
+              playsInline
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
           ) : (
             <div className="analysis-video-placeholder">
               <div className="analysis-video-placeholder-inner" />
             </div>
           )}
+
+          <button type="button" className="video-toggle-button" onClick={handleVideoToggle}>
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
 
           <div className="tracking-overlay" aria-label="AI hero tracking overlay">
             <div
@@ -633,7 +668,9 @@ function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
         </div>
       </div>
 
-      {progress >= 100 && <AnalysisResultPage />}
+      <div className="analysis-results-scroll">
+        {progress >= 100 && <AnalysisResultPage />}
+      </div>
     </div>
   );
 }
