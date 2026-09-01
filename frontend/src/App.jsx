@@ -540,10 +540,11 @@ function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [hasCompleted, setHasCompleted] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (!isPlaying) return undefined;
+    if (!isPlaying || hasCompleted) return undefined;
 
     const timer = window.setInterval(() => {
       setProgress((previous) => {
@@ -554,17 +555,18 @@ function GameplayAnalysisPage({ videoUrl, onAnalysisComplete }) {
     }, 120);
 
     return () => window.clearInterval(timer);
-  }, [isPlaying]);
+  }, [isPlaying, hasCompleted]);
 
   useEffect(() => {
-    if (progress >= 100) {
-      setIsPlaying(false);
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      onAnalysisComplete();
+    if (progress < 100 || hasCompleted) return;
+
+    setHasCompleted(true);
+    setIsPlaying(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
     }
-  }, [progress, onAnalysisComplete]);
+    onAnalysisComplete();
+  }, [progress, hasCompleted, onAnalysisComplete]);
 
   const handleVideoToggle = () => {
     if (!videoRef.current) return;
